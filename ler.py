@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
+from tqdm import tqdm
 
 
 pasta_raw = "./raw_data"  # Pasta com arquivos .cdf
@@ -25,12 +26,12 @@ with open(resumo_path, "w", newline="") as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=resumo_cols)
     writer.writeheader()
 
-    # Percorre todos os .cdf da pasta_raw
-    for fname in os.listdir(pasta_raw):
-        if not fname.lower().endswith(".cdf"):
-            continue
+    # Lista todos os arquivos para a barrinha de progresso
+    cdf_files = [fname for fname in os.listdir(pasta_raw) if fname.lower().endswith(".cdf")]
+    
+    # Percorre todos os .cdf da pasta_raw com barra de progresso
+    for fname in tqdm(cdf_files, desc="Processando arquivos CDF", unit="arquivo"):
         caminho = os.path.join(pasta_raw, fname)
-        print(f"Processando: {fname}")
 
         # Abre o arquivo
         ds = Dataset(caminho, "r")
@@ -46,7 +47,7 @@ with open(resumo_path, "w", newline="") as csvfile:
         tempo_s = np.arange(len(intensidade)) * dt + delay
         tempo_min = tempo_s / 60.0
 
-        # Salva cromatograma em CSV (usando sample_name)
+        # Salva cromatograma em CSV 
         cromatograma = pd.DataFrame({
             "tempo_min": tempo_min,
             "intensidade": intensidade
