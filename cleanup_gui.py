@@ -15,13 +15,14 @@ class CleanupGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Chroma Cleanup Tool")
-        self.root.geometry("500x600")
+        self.root.geometry("500x650")
         
         # Variáveis para os checkboxes
         self.var_raw_data = tk.BooleanVar()
         self.var_cromatogramas = tk.BooleanVar()
         self.var_plots = tk.BooleanVar()
         self.var_resumo = tk.BooleanVar()
+        self.var_combined = tk.BooleanVar()
         self.var_cdf_files = tk.BooleanVar()
         
         self.create_widgets()
@@ -55,6 +56,9 @@ class CleanupGUI:
         
         ttk.Checkbutton(checkbox_frame, text="[FILE] resumo.csv (arquivo de resumo)", 
                        variable=self.var_resumo).pack(anchor="w", pady=5)
+        
+        ttk.Checkbutton(checkbox_frame, text="[COMBINED] arquivos CSV compilados", 
+                       variable=self.var_combined).pack(anchor="w", pady=5)
         
         ttk.Checkbutton(checkbox_frame, text="[CDF] arquivos .cdf na raiz", 
                        variable=self.var_cdf_files).pack(anchor="w", pady=5)
@@ -104,6 +108,7 @@ class CleanupGUI:
         self.var_cromatogramas.set(True)
         self.var_plots.set(True)
         self.var_resumo.set(True)
+        self.var_combined.set(True)
         self.var_cdf_files.set(True)
         
     def clear_selection(self):
@@ -112,6 +117,7 @@ class CleanupGUI:
         self.var_cromatogramas.set(False)
         self.var_plots.set(False)
         self.var_resumo.set(False)
+        self.var_combined.set(False)
         self.var_cdf_files.set(False)
         
     def log(self, message):
@@ -179,7 +185,8 @@ class CleanupGUI:
             
             # Verificar se pelo menos uma opção foi selecionada
             if not any([self.var_raw_data.get(), self.var_cromatogramas.get(), 
-                       self.var_plots.get(), self.var_resumo.get(), self.var_cdf_files.get()]):
+                       self.var_plots.get(), self.var_resumo.get(), self.var_combined.get(),
+                       self.var_cdf_files.get()]):
                 self.log("[WARN] Nenhuma opcao selecionada!")
                 return
             
@@ -191,10 +198,23 @@ class CleanupGUI:
                 self.clear_directory("./cromatogramas", "Pasta de cromatogramas")
                 
             if self.var_plots.get():
-                self.clear_directory("./plots", "Pasta de gráficos")
+                self.clear_directory("./plots", "Pasta de graficos")
                 
             if self.var_resumo.get():
                 self.remove_file("./resumo.csv", "Arquivo de resumo")
+                
+            if self.var_combined.get():
+                # Remove múltiplos arquivos CSV compilados
+                combined_files = ["./cromatogramas_combinados.csv", "./cromatogramas_selecionados.csv"]
+                for file_path in combined_files:
+                    if os.path.exists(file_path):
+                        try:
+                            os.remove(file_path)
+                            self.log(f"[OK] {os.path.basename(file_path)} removido!")
+                        except Exception as e:
+                            self.log(f"[ERROR] Erro ao remover {os.path.basename(file_path)}: {e}")
+                    else:
+                        self.log(f"[WARN] {os.path.basename(file_path)} nao existe")
                 
             if self.var_cdf_files.get():
                 self.cleanup_cdf_files()
@@ -222,8 +242,9 @@ class CleanupGUI:
         """Inicia a limpeza em thread separada."""
         # Verificar seleções
         if not any([self.var_raw_data.get(), self.var_cromatogramas.get(), 
-                   self.var_plots.get(), self.var_resumo.get(), self.var_cdf_files.get()]):
-            messagebox.showwarning("Aviso", "Selecione pelo menos uma opção para limpar!")
+                   self.var_plots.get(), self.var_resumo.get(), self.var_combined.get(),
+                   self.var_cdf_files.get()]):
+            messagebox.showwarning("Aviso", "Selecione pelo menos uma opcao para limpar!")
             return
             
         # Confirmar ação
@@ -232,6 +253,7 @@ class CleanupGUI:
         if self.var_cromatogramas.get(): selected_items.append("cromatogramas/")
         if self.var_plots.get(): selected_items.append("plots/")
         if self.var_resumo.get(): selected_items.append("resumo.csv")
+        if self.var_combined.get(): selected_items.append("arquivos CSV compilados")
         if self.var_cdf_files.get(): selected_items.append("arquivos .cdf na raiz")
         
         confirm_msg = f"Tem certeza que deseja limpar:\n\n- " + "\n- ".join(selected_items)

@@ -73,4 +73,6 @@ Thumbs.db
 cromatogramas/
 plots/
 resumo.csv
+cromatogramas_combinados.csv
+cromatogramas_selecionados.csv
 *.cdf

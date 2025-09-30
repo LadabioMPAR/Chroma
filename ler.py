@@ -47,7 +47,7 @@ with open(resumo_path, "w", newline="") as csvfile:
         tempo_s = np.arange(len(intensidade)) * dt + delay
         tempo_min = tempo_s / 60.0
 
-        # Salva cromatograma em CSV 
+        # Salva cromatograma individual em CSV 
         cromatograma = pd.DataFrame({
             "tempo_min": tempo_min,
             "intensidade": intensidade
