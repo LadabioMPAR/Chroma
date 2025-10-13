@@ -49,8 +49,8 @@ with open(resumo_path, "w", newline="") as csvfile:
 
         # Salva cromatograma individual em CSV 
         cromatograma = pd.DataFrame({
-            "tempo_min": tempo_min,
-            "intensidade": intensidade
+            "time": tempo_min,
+            "signal": intensidade
         })
         out_csv = os.path.join(dir_cromatograma, f"{sample_name}.csv")
         cromatograma.to_csv(out_csv, index=False)

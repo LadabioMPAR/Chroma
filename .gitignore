@@ -70,9 +70,7 @@ venv.bak/
 Thumbs.db
 
 # Project specific (generated output)
-cromatogramas/
 plots/
 resumo.csv
 cromatogramas_combinados.csv
 cromatogramas_selecionados.csv
-*.cdf

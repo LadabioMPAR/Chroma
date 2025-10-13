@@ -1,0 +1,131 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from hplc.io import load_chromatogram
+from scipy.integrate import simpson
+import os
+
+# =============================================================================
+# --- PAINEL DE CONTROLE ---
+# =============================================================================
+
+# 1. Pastas de entrada e saída.
+PASTA_CROMATOGRAMAS = 'cromatogramas'
+PASTA_SAIDA_PLOTS = 'plots_celobiose'
+ARQUIVO_SAIDA_CSV = 'resultados_celobiose.csv'
+
+# 2. Limites de integração para o pico de celobiose.
+LIMITES_INTEGRACAO = {'inicio': 7.6, 'fim': 8.3}
+
+# 3. Parâmetros da sua curva de calibração.
+CURVA_CALIBRACAO = {
+    'slope': 4.2798,
+    'intercept': -0.0300
+}
+
+# 4. Configuração da linha de base.
+USAR_LINHA_BASE_FORCADA = True 
+ALTURA_LINHA_BASE = 0.0 
+
+# 5. Controle de plotagem.
+GERAR_PLOTS_DE_VERIFICACAO = True
+
+# =============================================================================
+
+# --- SCRIPT PRINCIPAL UNIFICADO ---
+sns.set_theme(style="ticks", rc={"axes.spines.right": False, "axes.spines.top": False})
+todos_os_resultados = []
+
+# Cria a pasta de saída para os plots, se ela não existir
+if GERAR_PLOTS_DE_VERIFICACAO and not os.path.exists(PASTA_SAIDA_PLOTS):
+    os.makedirs(PASTA_SAIDA_PLOTS)
+    print(f"Pasta de saída para gráficos criada: '{PASTA_SAIDA_PLOTS}'")
+
+print(f"\nIniciando processamento completo da pasta: '{PASTA_CROMATOGRAMAS}'...")
+
+lista_de_arquivos = os.listdir(PASTA_CROMATOGRAMAS)
+
+for nome_arquivo in lista_de_arquivos:
+    if nome_arquivo.lower().endswith('.csv'):
+        caminho_completo = os.path.join(PASTA_CROMATOGRAMAS, nome_arquivo)
+        print(f"  -> Processando: {nome_arquivo}")
+        
+        try:
+            df = load_chromatogram(caminho_completo, cols=['time', 'signal'])
+            
+            # --- 1. Integração do Pico ---
+            inicio_pico, fim_pico = LIMITES_INTEGRACAO['inicio'], LIMITES_INTEGRACAO['fim']
+            df_pico = df[(df['time'] >= inicio_pico) & (df['time'] <= fim_pico)]
+
+            if df_pico.empty:
+                print("     AVISO: Nenhum dado no intervalo de integração. Pulando.")
+                continue
+            
+            x_data = df_pico['time'].values
+            y_data = df_pico['signal'].values
+            
+            if USAR_LINHA_BASE_FORCADA:
+                sinal_corrigido = y_data - ALTURA_LINHA_BASE
+                sinal_corrigido[sinal_corrigido < 0] = 0
+                area_calculada = simpson(sinal_corrigido, x_data)
+            else:
+                area_calculada = simpson(y_data, x_data)
+
+            # --- 2. Cálculo da Concentração ---
+            slope, intercept = CURVA_CALIBRACAO['slope'], CURVA_CALIBRACAO['intercept']
+            concentracao_calculada = 0.0
+            if slope != 0:
+                concentracao_calculada = (area_calculada - intercept) / slope
+            if concentracao_calculada < 0:
+                concentracao_calculada = 0.0
+            
+            # --- 3. Geração e Salvamento do Gráfico (se ativado) ---
+            if GERAR_PLOTS_DE_VERIFICACAO:
+                plt.figure(figsize=(12, 7))
+                plt.plot(df['time'], df['signal'], color='gray', alpha=0.5, label='Sinal Completo')
+                plt.plot(x_data, y_data, 'o-', color='black', label='Dados do Pico', markersize=3)
+                
+                if USAR_LINHA_BASE_FORCADA:
+                    linha_de_base_plot = np.full_like(x_data, ALTURA_LINHA_BASE)
+                    plt.fill_between(x_data, y_data, linha_de_base_plot, where=y_data > linha_de_base_plot, color='skyblue', alpha=0.6, label=f'Área = {area_calculada:.2f}')
+                    plt.plot(x_data, linha_de_base_plot, '--', color='red', label=f'Linha de Base Fixa (y={ALTURA_LINHA_BASE})')
+                else:
+                    plt.fill_between(x_data, y_data, 0, color='skyblue', alpha=0.6, label=f'Área = {area_calculada:.2f}')
+
+                plt.axvline(x=inicio_pico, color='green', linestyle=':', label='Limites de Integração')
+                plt.axvline(x=fim_pico, color='green', linestyle=':')
+                
+                # --- MUDANÇA AQUI ---
+                # O título agora inclui o nome do arquivo e a concentração calculada.
+                titulo_grafico = (f'Integração - {nome_arquivo}\n'
+                                  f'Concentração Calculada: {concentracao_calculada:.4f}')
+                plt.title(titulo_grafico)
+                
+                plt.xlabel('Tempo'); plt.ylabel('Sinal'); plt.legend(); plt.grid(True)
+                
+                nome_base = os.path.splitext(nome_arquivo)[0]
+                caminho_saida_plot = os.path.join(PASTA_SAIDA_PLOTS, f"{nome_base}_integracao.png")
+                plt.savefig(caminho_saida_plot)
+                plt.close()
+
+            # --- 4. Armazenamento dos Resultados ---
+            todos_os_resultados.append({
+                'Nome do Arquivo': nome_arquivo,
+                'Área Calculada': area_calculada,
+                'Concentração Calculada': concentracao_calculada
+            })
+
+        except Exception as e:
+            print(f"     ERRO ao processar o arquivo {nome_arquivo}: {e}")
+
+# --- PARTE FINAL: Salvar a tabela de resultados ---
+if todos_os_resultados:
+    df_resultados = pd.DataFrame(todos_os_resultados)
+    df_resultados.to_csv(ARQUIVO_SAIDA_CSV, index=False, sep=';', decimal=',')
+    print(f"\n✅ Processamento concluído!")
+    print(f"Os resultados numéricos foram salvos em: '{ARQUIVO_SAIDA_CSV}'")
+    if GERAR_PLOTS_DE_VERIFICACAO:
+        print(f"Os gráficos de verificação foram salvos em: '{PASTA_SAIDA_PLOTS}'")
+else:
+    print("\nNenhum arquivo foi processado com sucesso.")
