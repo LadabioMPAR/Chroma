@@ -24,7 +24,7 @@ EXTRA_WINDOW = 10           # janela extra para ajuste (em múltiplos do delta t
 Tk().withdraw()
 pasta = filedialog.askdirectory(title="Selecione a pasta com os cromatogramas")
 if not pasta:
-    raise SystemExit("❌ Nenhuma pasta selecionada. Encerrando.")
+    raise SystemExit("Nenhuma pasta selecionada. Encerrando.")
 
 # Nome da pasta para salvar CSV e plots
 nome_pasta = os.path.basename(pasta.rstrip("/\\"))
@@ -189,7 +189,7 @@ csv_saida = f"resultados/parametros_ajuste_gamma_{nome_pasta}.csv"
 df_resultados = pd.DataFrame(resultados)
 df_resultados.to_csv(csv_saida, index=False)
 
-print("\n✅ Análise concluída!")
+print("\n Análise concluída!")
 print(f"Resultados salvos em: {csv_saida}")
 print(f"Gráficos principais salvos em: {plots_saida}")
 print(f"Gráficos de resíduos salvos em: {plots_residuos}")
