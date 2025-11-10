@@ -14,8 +14,8 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 # ----------------------------
 # Parâmetros ajustáveis
 # ----------------------------
-PROMINENCE = 0.1           # prominence para find_peaks
-DISTANCE = 10               # distância mínima entre picos
+PROMINENCE = 0.1         # prominence para find_peaks
+DISTANCE = 1               # distância mínima entre picos
 EXTRA_WINDOW = 10           # janela extra para ajuste (em múltiplos do delta t)
 
 # ----------------------------
