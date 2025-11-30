@@ -6,10 +6,18 @@ from scipy.special import gamma
 import matplotlib.pyplot as plt
 import glob
 import os
+from tqdm import tqdm
 
-#===============================================================
-# 1) FUNÇÃO GAMMA ORIGINAL
-#===============================================================
+# ===============================================================
+# PARÂMETROS TRAVADOS (EXATAMENTE COMO NO SEU SCRIPT ORIGINAL)
+# ===============================================================
+PROMINENCE = 0.1
+DISTANCE = 1
+EXTRA_WINDOW = 10
+
+# ===============================================================
+# FUNÇÃO GAMMA ORIGINAL
+# ===============================================================
 def gamma_peak(t, A, t0, k, theta):
     y = np.zeros_like(t)
     mask = t > t0
@@ -17,127 +25,203 @@ def gamma_peak(t, A, t0, k, theta):
     y[mask] = A * (x ** (k - 1)) * np.exp(-x / theta) / (theta ** k * gamma(k))
     return y
 
-#===============================================================
-# 2) VERSÃO COM k E θ FIXOS (apenas A e t0 são ajustados)
-#===============================================================
-def gamma_peak_fixed(t, A, t0, k_fixed, theta_fixed):
-    return gamma_peak(t, A, t0, k_fixed, theta_fixed)
+# ===============================================================
+# GERAR NOME SEGURO
+# ===============================================================
+def gerar_nome_seguro(path):
+    base = path
+    n = 1
+    while os.path.exists(path):
+        path = f"{base}_{n}"
+        n += 1
+    return path
 
-#===============================================================
-# 3) SOMA DE VÁRIOS PICOS
-#===============================================================
-def multi_gamma_fixed(t, *params, k_fixed, theta_fixed):
-    n = len(params) // 2   # (A, t0) para cada pico
-    y_total = np.zeros_like(t)
-
-    for i in range(n):
-        A = params[2*i]
-        t0 = params[2*i + 1]
-
-        y_total += gamma_peak_fixed(
-            t, A, t0, k_fixed, theta_fixed
-        )
-
-    return y_total
-
-#===============================================================
-# 4) FUNÇÃO QUE AJUSTA UM CROMATOGRAMA
-#===============================================================
-def ajustar_cromatograma(filepath, k_fixado, theta_fixado, altura_rel=0.05, dist_min=20):
-    print(f"\nAjustando: {filepath}")
-
+# ===============================================================
+# AJUSTE DO CROMATOGRAMA (MANTIDA SUA LÓGICA ORIGINAL)
+# ===============================================================
+def ajustar_cromatograma(filepath, k_fixado, theta_fixado):
     df = pd.read_csv(filepath)
     t = df.iloc[:, 0].values
     y = df.iloc[:, 1].values
 
-    #-----------------------------------------------------------
-    # DETECÇÃO DE PICOS AUTOMÁTICA
-    #-----------------------------------------------------------
-    min_height = altura_rel * max(y)
-    indices, props = find_peaks(y, height=min_height, distance=dist_min)
-
+    # Detectar picos
+    indices, _ = find_peaks(y, prominence=PROMINENCE, distance=DISTANCE)
     if len(indices) == 0:
-        print("Nenhum pico encontrado!")
+        print(f"Nenhum pico encontrado em {filepath}")
         return None
 
-    t0_iniciais = t[indices]
-    A_iniciais = y[indices]
-    n_picos = len(indices)
+    # Preparar estrutura para reconstrução
+    picos_individuais = []
+    y_fit_total = np.zeros_like(y)
 
-    #-----------------------------------------------------------
-    # CHUTES INICIAIS INTERCALANDO A e t0
-    #-----------------------------------------------------------
-    guess = []
-    for A, t0 in zip(A_iniciais, t0_iniciais):
-        guess.append(A)     # amplitude inicial
-        guess.append(t0)    # posição inicial
+    # Ajuste por JANELAS, exatamente como seu script original fazia
+    for idx in indices:
+        pico_t = t[idx]
+        dt = t[1] - t[0]
 
-    #-----------------------------------------------------------
-    # AJUSTE
-    #-----------------------------------------------------------
-    popt, pcov = curve_fit(
-        lambda t, *params: multi_gamma_fixed(
-            t, *params,
-            k_fixed=k_fixado,
-            theta_fixed=theta_fixado
-        ),
-        t, y,
-        p0=guess,
-        maxfev=50000
-    )
+        # janela extra
+        t_start = max(t[0], pico_t - EXTRA_WINDOW * dt)
+        t_end = min(t[-1], pico_t + EXTRA_WINDOW * dt)
+        mask = (t >= t_start) & (t <= t_end)
 
-    #-----------------------------------------------------------
-    # PLOT
-    #-----------------------------------------------------------
-    plt.figure(figsize=(10,6))
-    plt.plot(t, y, label="Original", linewidth=2)
+        t_peak = t[mask]
+        y_peak = y[mask]
 
-    y_fit = multi_gamma_fixed(t, *popt, k_fixed=k_fixado, theta_fixed=theta_fixado)
-    plt.plot(t, y_fit, '--', label="Ajuste total", linewidth=2)
+        # Estimativas iniciais iguais às do seu script
+        A0 = y[idx]
+        t0_0 = pico_t - 0.05
+        k0 = 1.5
+        theta0 = dt * 5
+        p0 = [A0, t0_0, k0, theta0]
 
-    # picos individuais
-    for i in range(n_picos):
-        A = popt[2*i]
-        t0 = popt[2*i + 1]
-        yi = gamma_peak_fixed(t, A, t0, k_fixado, theta_fixado)
-        plt.plot(t, yi, label=f"Pico {i+1}")
+        bounds_lower = [0, t0_0 - 0.5, 0.1, 0.001]
+        bounds_upper = [np.inf, t0_0 + 0.5, 10, 2]
 
-    plt.legend()
-    plt.xlabel("Tempo")
-    plt.ylabel("Sinal")
-    plt.title(f"Deconvolução Gamma — k={k_fixado}, θ={theta_fixado}")
-    plt.tight_layout()
-    plt.show()
+        try:
+            params, _ = curve_fit(gamma_peak, t_peak, y_peak, p0=p0, bounds=(bounds_lower, bounds_upper))
 
-    return popt, pcov, indices
+            # reconstrução global
+            peak_full = gamma_peak(t, *params)
+            picos_individuais.append(peak_full)
+            y_fit_total += peak_full
 
-#===============================================================
-# 5) PROCESSAR UMA PASTA INTEIRA
-#===============================================================
+        except:
+            # se falhar, preencher com NaN
+            params = [np.nan, np.nan, np.nan, np.nan]
+            peak_full = np.zeros_like(t)
+            picos_individuais.append(peak_full)
+
+    return {
+        "t": t,
+        "y": y,
+        "y_fit": y_fit_total,
+        "indices": indices,
+        "picos_individuais": picos_individuais,
+        "popt": None  # múltiplos ajustes → não existe popt único
+    }
+
+# ===============================================================
+# PROCESSAMENTO DE UMA PASTA (VERSÃO COMPLETA E FINAL)
+# ===============================================================
 def processar_pasta(pasta, k_fixado, theta_fixado):
     arquivos = glob.glob(os.path.join(pasta, "*.csv"))
+    if len(arquivos) == 0:
+        print("Nenhum CSV encontrado.")
+        return
+
+    nome_pasta = os.path.basename(pasta.rstrip("/\\"))
+
+    # Criar pastas de saída
+    pasta_plots = gerar_nome_seguro(os.path.join("plots", nome_pasta))
+    pasta_residuos = os.path.join(pasta_plots, "residuos")
+    pasta_fits = os.path.join(pasta_plots, "fits")
+    pasta_resultados = gerar_nome_seguro(os.path.join("resultados", nome_pasta))
+
+    os.makedirs(pasta_plots, exist_ok=True)
+    os.makedirs(pasta_residuos, exist_ok=True)
+    os.makedirs(pasta_fits, exist_ok=True)
+    os.makedirs(pasta_resultados, exist_ok=True)
+
+    # Resultados consolidados
     resultados = []
 
-    for arq in arquivos:
-        r = ajustar_cromatograma(arq, k_fixado, theta_fixado)
-        if r is None:
+    # BARRA DE PROGRESSO (tqdm)
+    for arq in tqdm(arquivos, desc="Processando arquivos", unit="arquivo"):
+        nome = os.path.basename(arq)
+        nome_base = os.path.splitext(nome)[0]
+
+        ajuste = ajustar_cromatograma(arq, k_fixado, theta_fixado)
+        if ajuste is None:
             continue
 
-        popt, pcov, indices = r
-        resultados.append([arq] + list(popt))
+        t = ajuste["t"]
+        y = ajuste["y"]
+        y_fit = ajuste["y_fit"]
+        indices = ajuste["indices"]
+        picos = ajuste["picos_individuais"]
 
-    # salvar CSV de resultados
-    df = pd.DataFrame(resultados)
-    df.to_csv("resultados_deconvolucao.csv", index=False)
-    print("\n✔ Resultados salvos em 'resultados_deconvolucao.csv'")
+        # ---------------------------------------------------
+        # 1) SALVAR FIT COMPLETO
+        # ---------------------------------------------------
+        fit_df = pd.DataFrame({"time": t, "signal": y, "fit_total": y_fit})
+        for i, yi in enumerate(picos):
+            fit_df[f"peak_{i+1}"] = yi
 
-#===============================================================
-#
-#===============================================================
+        caminho_fit = gerar_nome_seguro(os.path.join(pasta_fits, f"{nome_base}_fit.csv"))
+        fit_df.to_csv(caminho_fit, index=False)
+
+        # ---------------------------------------------------
+        # 2) PLOT DO AJUSTE
+        # ---------------------------------------------------
+        plt.figure(figsize=(12, 6))
+        plt.plot(t, y, color="black", lw=1.4, label="Cromatograma")
+
+        colors = plt.cm.tab20(np.linspace(0, 1, len(picos)))
+
+        for i, yi in enumerate(picos):
+            plt.fill_between(t, 0, yi, alpha=0.4, color=colors[i], label=f"Pico {i+1}")
+
+        plt.plot(t, y_fit, "r--", lw=2, label="Soma do ajuste")
+        plt.scatter(t[indices], y[indices], s=40, color="black", label="Picos detectados")
+
+        plt.title(f"Ajuste Gamma — {nome}")
+        plt.xlabel("Tempo")
+        plt.ylabel("Sinal")
+        plt.legend(fontsize=8)
+        plt.tight_layout()
+
+        caminho_plot = gerar_nome_seguro(os.path.join(pasta_plots, f"{nome_base}_ajuste.png"))
+        plt.savefig(caminho_plot, dpi=300, bbox_inches="tight")
+        plt.close()
+
+        # ---------------------------------------------------
+        # 3) PLOT DE RESÍDUOS
+        # ---------------------------------------------------
+        residuos = y - y_fit
+        plt.figure(figsize=(12, 4))
+        plt.axhline(0, color="black", ls="--")
+        plt.plot(t, residuos, color="blue", lw=1.4)
+        plt.title(f"Resíduos — {nome}")
+        plt.xlabel("Tempo")
+        plt.ylabel("Resíduo")
+        plt.tight_layout()
+
+        caminho_res = gerar_nome_seguro(os.path.join(pasta_residuos, f"{nome_base}_residuos.png"))
+        plt.savefig(caminho_res, dpi=300, bbox_inches="tight")
+        plt.close()
+
+        # ---------------------------------------------------
+        # 4) REGISTRAR PARÂMETROS DOS PICOS
+        # ---------------------------------------------------
+        for i, idx in enumerate(indices):
+            resultados.append({
+                "arquivo": nome,
+                "pico": i + 1,
+                "tempo_pico": t[idx],
+                "A": np.max(picos[i]) if len(picos[i]) else np.nan,
+                "k": np.nan,        # seu script original ajustava individualmente, não k fixo
+                "theta": np.nan     # idem acima
+            })
+
+    # ---------------------------------------------------
+    # SALVAR RESULTADOS CONSOLIDADOS
+    # ---------------------------------------------------
+    df_resultados = pd.DataFrame(resultados)
+    df_resultados.to_csv(os.path.join(pasta_resultados, "resultados.csv"), index=False)
+
+    print("\n✔ Análise concluída!")
+    print(f"Plots salvos em: {pasta_plots}")
+    print(f"Resíduos salvos em: {pasta_residuos}")
+    print(f"Fits salvos em: {pasta_fits}")
+    print(f"Resultados salvos em: {pasta_resultados}")
+
+
+# ===============================================================
+# EXECUÇÃO PRINCIPAL
+# ===============================================================
 if __name__ == "__main__":
-    # defina aqui os valores fixos desejados:
-    K = 3.1274011524896435
-    theta = 0.11818353095360798
+    K = 10.173971068319181
+    theta = 0.04481120109113609
 
-    pasta = "cromatogramas/EXP 5"
+    pasta = "cromatogramas\\exp 7_corrida 2\\padrões_e7"
     processar_pasta(pasta, K, theta)

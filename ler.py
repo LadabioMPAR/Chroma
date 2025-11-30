@@ -13,7 +13,27 @@ dir_plots = "./plots" # Pasta de saída para gráficos PNG
 os.makedirs(dir_cromatograma, exist_ok=True)
 os.makedirs(dir_plots, exist_ok=True)
 
-# Configuração do arquivo resumo
+# ---------------------------------------------------------
+# Função para evitar sobrescrita de arquivos
+# ---------------------------------------------------------
+def unique_name(path):
+    """
+    Se o arquivo existir, incrementa sufixos _1, _2, _3...
+    Retorna um caminho único.
+    """
+    base, ext = os.path.splitext(path)
+    counter = 1
+    new_path = path
+
+    while os.path.exists(new_path):
+        new_path = f"{base}_{counter}{ext}"
+        counter += 1
+
+    return new_path
+
+# ---------------------------------------------------------
+# Arquivo resumo
+# ---------------------------------------------------------
 resumo_path = "resumo.csv"
 resumo_cols = [
     "arquivo", "sample_name", "injection_date_time_stamp",
@@ -26,42 +46,40 @@ with open(resumo_path, "w", newline="") as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=resumo_cols)
     writer.writeheader()
 
-    # Lista todos os arquivos para a barrinha de progresso
     cdf_files = [fname for fname in os.listdir(pasta_raw) if fname.lower().endswith(".cdf")]
-    
-    # Percorre todos os .cdf da pasta_raw com barra de progresso
+
     for fname in tqdm(cdf_files, desc="Processando arquivos CDF", unit="arquivo"):
         caminho = os.path.join(pasta_raw, fname)
 
-        # Abre o arquivo
         ds = Dataset(caminho, "r")
 
-        # Metadados globais
+        # Metadados
         meta = {a: getattr(ds, a) for a in ds.ncattrs()}
         sample_name = meta.get("sample_name", os.path.splitext(fname)[0]).strip()
 
-        # Extrai sinal
+        # Sinal
         intensidade = ds.variables["ordinate_values"][:]
         dt = float(ds.variables["actual_sampling_interval"][:])
         delay = float(ds.variables["actual_delay_time"][:])
         tempo_s = np.arange(len(intensidade)) * dt + delay
         tempo_min = tempo_s / 60.0
 
-        # Salva cromatograma individual em CSV 
-        cromatograma = pd.DataFrame({
-            "time": tempo_min,
-            "signal": intensidade
-        })
+        # Salvar CSV garantindo nome único
         out_csv = os.path.join(dir_cromatograma, f"{sample_name}.csv")
+        out_csv = unique_name(out_csv)
+
+        cromatograma = pd.DataFrame({"time": tempo_min, "signal": intensidade})
         cromatograma.to_csv(out_csv, index=False)
 
-        # Gerando gráfico (usando sample_name)
+        # Salvar PNG garantindo nome único
+        out_png = os.path.join(dir_plots, f"{sample_name}.png")
+        out_png = unique_name(out_png)
+
         plt.figure(figsize=(10, 5))
         plt.plot(tempo_min, intensidade, color="blue")
         plt.title(f"Cromatograma - {sample_name}")
         plt.xlabel("Tempo (min)")
         plt.ylabel("Intensidade (mV)")
-        out_png = os.path.join(dir_plots, f"{sample_name}.png")
         plt.savefig(out_png, dpi=150, bbox_inches="tight")
         plt.close()
 
