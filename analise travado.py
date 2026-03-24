@@ -220,8 +220,8 @@ def processar_pasta(pasta, k_fixado, theta_fixado):
 # EXECUÇÃO PRINCIPAL
 # ===============================================================
 if __name__ == "__main__":
-    K = 10.173971068319181
-    theta = 0.04481120109113609
+    K = 10.686262164316052
+    theta = 0.0410141631069367
 
-    pasta = "cromatogramas\\exp 7_corrida 2\\padrões_e7"
+    pasta = "cromatogramas\\EXP 8"
     processar_pasta(pasta, K, theta)
