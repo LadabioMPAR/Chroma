@@ -161,7 +161,7 @@ def main():
     print("\n>>> Iniciando ajuste global dos cromatogramas de PADRÕES...\n")
 
     result, files, all_t, all_y, n_picos_list = fit_gamma_variable_peaks(
-        "cromatogramas\\exp 7_corrida 2\\padrões_e7\\*.csv"
+        "cromatogramas/exp 7_corrida 2/padrões_e7/*.csv"
     )
 
     gerar_plots_e_relatorio(

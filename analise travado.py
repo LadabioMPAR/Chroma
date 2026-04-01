@@ -11,7 +11,7 @@ from tqdm import tqdm
 # ===============================================================
 # PARÂMETROS TRAVADOS (EXATAMENTE COMO NO SEU SCRIPT ORIGINAL)
 # ===============================================================
-PROMINENCE = 0.1
+PROMINENCE = 0.01
 DISTANCE = 1
 EXTRA_WINDOW = 10
 
@@ -212,7 +212,7 @@ def processar_pasta(pasta, k_fixado, theta_fixado):
     print("\n✔ Análise concluída!")
     print(f"Plots salvos em: {pasta_plots}")
     print(f"Resíduos salvos em: {pasta_residuos}")
-    print(f"Fits salvos em: {pasta_fits}")
+    print(f"Fists salvos em: {pasta_fits}")
     print(f"Resultados salvos em: {pasta_resultados}")
 
 
@@ -223,5 +223,5 @@ if __name__ == "__main__":
     K = 10.173971068319181
     theta = 0.04481120109113609
 
-    pasta = "cromatogramas\\exp 7_corrida 2\\padrões_e7"
+    pasta = "cromatogramas/ESTR"
     processar_pasta(pasta, K, theta)
