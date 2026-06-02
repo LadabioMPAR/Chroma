@@ -1,0 +1,13 @@
+--- Relatório da Curva de Calibração ---
+
+Modo da Linha de Base: dois_pontos
+
+Equação da Reta: Área = 3.9434 * Concentração + -0.0264
+Coeficiente de Determinação (R²): 0.999976
+
+Dados utilizados:
+                   arquivo  concentracao     area
+ DCS_Celobiose_2gL_5uL.csv         0.125 0.474674
+DCS_Celobiose_2gL_10uL.csv         0.250 0.955342
+DCS_Celobiose_2gL_20uL.csv         0.500 1.937192
+DCS_Celobiose_2gL_40uL.csv         1.000 3.921088
