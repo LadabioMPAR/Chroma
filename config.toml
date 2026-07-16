@@ -1,0 +1,161 @@
+# ============================================================
+#  Configuração central do Chroma
+#
+#  As ferramentas em scripts/ são INDEPENDENTES — cada uma faz
+#  uma coisa e opera sobre CSVs. Não há uma ordem obrigatória;
+#  use a que precisar. Cada bloco abaixo configura uma ferramenta.
+#
+#  Caminhos relativos são resolvidos a partir da raiz do repo.
+# ============================================================
+
+[paths]
+raw_cdf       = "data/raw"             # arquivos .cdf do HPLC
+chromatograms = "chris/analise/chromatograms"   # CSVs (colunas: time, signal)
+plots         = "chris/analise/plots"        # gráficos gerados
+results       = "chris/analise/results"      # CSVs de resultados
+summary_csv   = "chris/analise/results/resumo.csv"
+
+
+# ------------------------------------------------------------
+#  Ferramenta: ler_cdf.py  —  converte .cdf em CSV + PNG + resumo.
+#  (usa apenas [paths]; sem parâmetros próprios)
+# ------------------------------------------------------------
+
+
+# ------------------------------------------------------------
+#  Ferramenta: ajuste_individual.py  —  estima a área dos picos
+#  ajustando cada um com TODOS os parâmetros livres. O modelo é
+#  livre (gamma, gaussian, ...); não está preso ao gamma.
+# ------------------------------------------------------------
+[individual_fit]
+input_dir    = "chris/3hp_pad/chromatograms"   # pasta com os CSVs a analisar
+model        = "gamma"    # qualquer modelo registrado em chroma/models.py
+extra_window = 10         # janela de ajuste = ± extra_window * dt
+randomize_k  = true       # (só afeta o gamma) k0 = 1.5 + rand()*2
+
+[individual_fit.peaks]
+method     = "prominence"   # find_peaks(prominence=..., distance=...)
+prominence = 0.1
+distance   = 1
+
+
+# ------------------------------------------------------------
+#  Ferramenta: analisar.py  —  calibra k e theta nos PADRÕES
+#  (ajuste global, exige gamma) e analisa as AMOSTRAS com esses
+#  k e theta travados, exportando as áreas.
+# ------------------------------------------------------------
+[analysis]
+standards_glob = "data/chromatograms/pad_e09/*.csv"   # padrões (p/ estimar k, theta)
+samples_glob   = "data/chromatograms/pad_e09/*.csv"   # amostras a analisar (travado)
+model          = "gamma"
+extra_window   = 10
+
+# k e theta: "auto" estima dos padrões (standards_glob);
+# ou escreva números (p.ex. de uma calibração anterior) para pular a estimativa.
+k     = "auto"
+theta = "auto"
+
+k0     = 5.0     # chute inicial de k na estimativa global
+theta0 = 0.2     # chute inicial de theta
+
+report_csv = "outputs/results/relatorio_picos.csv"   # picos dos padrões
+ktheta_out = "outputs/results/k_theta.json"          # k, theta estimados
+
+[analysis.standards_peaks]   # detecção nos PADRÕES (p/ estimar k, theta)
+method     = "relative_height"   # find_peaks(height=max(y)*height_rel, distance=...)
+height_rel = 0.1
+distance   = 5
+
+[analysis.sample_peaks]      # detecção nas AMOSTRAS (ajuste travado)
+method     = "prominence"
+prominence = 0.01
+distance   = 1
+
+
+# ------------------------------------------------------------
+#  Ferramenta: corrigir_baseline.py  —  corrige a linha de base
+#  de espectros específicos (por glob OU lista) e salva CSVs
+#  corrigidos (coluna `signal` já corrigida) + gráficos.
+# ------------------------------------------------------------
+[baseline]
+input_glob = "data/chromatograms/Wilhamis_CRA14_XOS/*.csv"   # espectros a corrigir
+# Alternativa: em vez de input_glob, liste arquivos específicos (tem prioridade):
+# files = [
+#   "data/chromatograms/Wilhamis_CRA14_XOS/CRA14_F2.csv",
+#   "data/chromatograms/Wilhamis_CRA14_XOS/CRA14_F44.csv",
+# ]
+method     = "beads"          # "linear" ou "beads"
+output_dir = "data/chromatograms/corrigidos"
+plots_dir  = "outputs/plots/baseline"
+
+[baseline.beads]    # parâmetros do BEADS (usados quando method = "beads")
+lam = 1e6
+fc  = 0.015
+r   = 0.05
+nit = 80
+
+
+# ------------------------------------------------------------
+#  Ferramenta: curva_calibracao.py  —  monta retas de calibração
+#  concentração = a·área + b (b=0 por padrão) por analito, a partir
+#  de um CSV de áreas já gerado (por ajuste_individual ou analisar).
+# ------------------------------------------------------------
+[calibration]
+areas_csv      = "outputs/results/parametros_ajuste_gamma_pad_e09.csv"  # colunas: arquivo, tempo_pico, area
+fit_intercept  = false    # b=0 (reta pela origem) por padrão; true para estimar b
+peak_tolerance = 0.5      # casa o pico ao analito se |tempo_pico - peak_time| <= tolerância
+output_csv     = "outputs/results/calibracao.csv"
+output_txt     = "outputs/results/calibracao.txt"   # curvas em txt (p/ outro script consumir)
+plots_dir      = "outputs/plots/calibracao"
+
+# Um bloco por analito. `points` lista os padrões e a concentração do analito
+# em cada um (ajuste os valores de `concentration` aos seus padrões).
+[[calibration.analytes]]
+name = "Glicose"
+peak_time = 11.4
+points = [
+  { file = "Glic_3gl_5.csv",  concentration = 5 },
+  { file = "Glic_3gl_10.csv", concentration = 10 },
+  { file = "Glic_3gl_20.csv", concentration = 20 },
+  { file = "Glic_3gl_40.csv", concentration = 40 },
+]
+
+[[calibration.analytes]]
+name = "Celobiose"
+peak_time = 9.3
+points = [
+  { file = "Celob_1gl_5.csv",  concentration = 5 },
+  { file = "Celob_1gl_10.csv", concentration = 10 },
+  { file = "Celob_1gl_20.csv", concentration = 20 },
+  { file = "Celob_1gl_40.csv", concentration = 40 },
+]
+
+[[calibration.analytes]]
+name = "Xilose"
+peak_time = 12.2
+points = [
+  { file = "Xil_1gl_5.csv",  concentration = 5 },
+  { file = "Xil_1gl_10.csv", concentration = 10 },
+  { file = "xil_1gl_20.csv", concentration = 20 },
+  { file = "xil_1gl_40.csv", concentration = 40 },
+]
+
+
+# ------------------------------------------------------------
+#  Ferramenta: calcular_concentracoes.py  —  varre uma pasta de
+#  amostras, ajusta os picos e calcula a concentração de cada
+#  analito aplicando as curvas de calibração (calibracao.txt).
+# ------------------------------------------------------------
+[quantify]
+input_dir      = "data/chromatograms/pad_e09"          # pasta com as amostras
+curves_txt     = "outputs/results/calibracao.txt"      # curvas (de curva_calibracao.py)
+model          = "gamma"
+extra_window   = 10
+peak_tolerance = 0.5      # casa o pico ao analito se |tempo_pico - peak_time| <= tolerância
+output_csv     = "outputs/results/concentracoes.csv"
+# analytes = ["Glicose", "Xilose"]   # opcional: só estes; ausente/vazio = todos os da curva
+
+[quantify.peaks]
+method     = "prominence"
+prominence = 0.1
+distance   = 1

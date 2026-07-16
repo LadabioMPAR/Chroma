@@ -1,0 +1,13 @@
+arquivo,sample_name,injection_date_time_stamp,sample_id_comments,sample_type,sample_injection_volume,sample_amount,detector_name,detector_unit,retention_unit,n_pontos,tempo_final_min
+B2ExportedRawData1230.cdf,Pd. 3HP 0.5gL _ 20ul,20220603191656-0200,"$$ 2.1 vial 1:A,4 injection 1",STANDARD,20.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1238.cdf,Pd. 3HP 2gL _ 5ul,20220603200748-0200,"$$ 2.1 vial 1:A,5 injection 1",STANDARD,5.0,1.0,410 ,MV,seconds,1502,25.016666666666666
+B2ExportedRawData1246.cdf,Pd. 3HP 2gL _ 20ul,20220603205839-0200,"$$ 2.1 vial 1:A,5 injection 1",STANDARD,20.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1266.cdf,Pd. 3HP 10gL _ 40ul,20220603230551-0200,"$$ 2.1 vial 1:A,6 injection 1",STANDARD,40.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1254.cdf,Pd. 3HP 10gL _ 5ul,20220603214932-0200,"$$ 2.1 vial 1:A,6 injection 1",STANDARD,5.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1258.cdf,Pd. 3HP 10gL _ 10ul,20220603221457-0200,"$$ 2.1 vial 1:A,6 injection 1",STANDARD,10.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1222.cdf,Pd. 3HP 0.5gL _ 5ul,20220603182605-0200,"$$ 2.1 vial 1:A,4 injection 1",STANDARD,5.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1226.cdf,Pd. 3HP 0.5gL _ 10ul,20220603185130-0200,"$$ 2.1 vial 1:A,4 injection 1",STANDARD,10.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1242.cdf,Pd. 3HP 2gL _ 10ul,20220603203313-0200,"$$ 2.1 vial 1:A,5 injection 1",STANDARD,10.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1234.cdf,Pd. 3HP 0.5gL _ 40ul,20220603194224-0200,"$$ 2.1 vial 1:A,4 injection 1",STANDARD,40.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1262.cdf,Pd. 3HP 10gL _ 20ul,20220603224021-0200,"$$ 2.1 vial 1:A,6 injection 1",STANDARD,20.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1250.cdf,Pd. 3HP 2gL _ 40ul,20220603212409-0200,"$$ 2.1 vial 1:A,5 injection 1",STANDARD,40.0,1.0,410 ,MV,seconds,1501,25.0

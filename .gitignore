@@ -69,4 +69,11 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
+# Segredos / credenciais — NUNCA versionar
+exporter/credenciais-api.json
+*credenciais*.json
+*.credentials.json
+
 # Project specific (generated output)
+outputs/
+

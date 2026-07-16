@@ -1,0 +1,13 @@
+arquivo,sample_name,injection_date_time_stamp,sample_id_comments,sample_type,sample_injection_volume,sample_amount,detector_name,detector_unit,retention_unit,n_pontos,tempo_final_min
+B2ExportedRawData1147.cdf,Xil_1gl_5,20260512221643-0200,"$$ 2.1 vial 1:A,4 injection 1",STANDARD,5.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1117.cdf,Glic_3gl_20,20260512194412-0200,"$$ 2.1 vial 1:A,2 injection 1",STANDARD,20.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1142.cdf,Celob_1gl_40,20260512215120-0200,"$$ 2.1 vial 1:A,3 injection 1",STANDARD,40.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1132.cdf,Celob_1gl_10,20260512210028-0200,"$$ 2.1 vial 1:A,3 injection 1",STANDARD,10.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1112.cdf,Glic_3gl_10,20260512191848-0200,"$$ 2.1 vial 1:A,2 injection 1",STANDARD,10.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1122.cdf,Glic_3gl_40,20260512200940-0200,"$$ 2.1 vial 1:A,2 injection 1",STANDARD,40.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1157.cdf,xil_1gl_20,20260512230732-0200,"$$ 2.1 vial 1:A,4 injection 1",STANDARD,20.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1107.cdf,Glic_3gl_5,20260512185326-0200,"$$ 2.1 vial 1:A,2 injection 1",STANDARD,5.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1137.cdf,Celob_1gl_20,20260512212552-0200,"$$ 2.1 vial 1:A,3 injection 1",STANDARD,20.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1127.cdf,Celob_1gl_5,20260512203503-0200,"$$ 2.1 vial 1:A,3 injection 1",STANDARD,5.0,1.0,410 ,MV,seconds,1502,25.016666666666666
+B2ExportedRawData1162.cdf,xil_1gl_40,20260512233301-0200,"$$ 2.1 vial 1:A,4 injection 1",STANDARD,40.0,1.0,410 ,MV,seconds,1501,25.0
+B2ExportedRawData1152.cdf,Xil_1gl_10,20260512224208-0200,"$$ 2.1 vial 1:A,4 injection 1",STANDARD,10.0,1.0,410 ,MV,seconds,1501,25.0
