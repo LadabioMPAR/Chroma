@@ -94,6 +94,22 @@ def apply_curve(area, a, b):
     return a * area + b
 
 
+def area_at(peak_results, target_time, tolerance):
+    """Área do pico ajustado mais próximo de `target_time`, dentro de `tolerance`.
+
+    `peak_results` é a saída de fitting.fit_peaks_individual.
+    Devolve None se não houver pico próximo o bastante ou se a área for NaN.
+    """
+    if not peak_results:
+        return None
+    times = np.array([pr["peak_time"] for pr in peak_results], dtype=float)
+    areas = np.array([pr["area"] for pr in peak_results], dtype=float)
+    j = int(np.argmin(np.abs(times - target_time)))
+    if abs(times[j] - target_time) > tolerance or np.isnan(areas[j]):
+        return None
+    return float(areas[j])
+
+
 def _same_file(a, b):
     """Compara nomes de arquivo pelo basename sem extensão (ignora caixa)."""
     na = os.path.splitext(os.path.basename(str(a)))[0].lower()

@@ -58,17 +58,12 @@ def main():
             time, signal, idxs, model_name=model_name,
             extra_window=q.get("extra_window", 10), fixed=None,
         )
-        ptimes = np.array([pr["peak_time"] for pr in peak_results])
-        pareas = np.array([pr["area"] for pr in peak_results])
-
         linha = {"arquivo": nome}
         for c in curves:
-            conc = np.nan
-            if len(ptimes) > 0:
-                j = int(np.argmin(np.abs(ptimes - c["tempo_pico"])))
-                if abs(ptimes[j] - c["tempo_pico"]) <= tol and not np.isnan(pareas[j]):
-                    conc = calibration.apply_curve(pareas[j], c["a"], c["b"])
-            linha[c["analito"]] = conc
+            area = calibration.area_at(peak_results, c["tempo_pico"], tol)
+            linha[c["analito"]] = (
+                calibration.apply_curve(area, c["a"], c["b"]) if area is not None else np.nan
+            )
         linhas.append(linha)
 
     output_csv = config.resolve(q["output_csv"])
